@@ -61,11 +61,14 @@ pub enum Commands {
         #[arg(short, long, default_value = "t10k-labels.idx1-ubyte")]
         labels_path: String,
 
-        #[arg(default_value = "0")]
+        #[arg(long, default_value = "0")]
         skip: usize,
 
-        #[arg(default_value = "10000")]
+        #[arg(long, default_value = "10000")]
         size: usize,
+
+        #[arg(short, long)]
+        verbose: bool,
     },
 }
 
@@ -111,6 +114,7 @@ fn main() {
             labels_path,
             skip,
             size,
+            verbose,
         } => {
             let mut datasource = Datasource::new(&images_path, &labels_path);
             let neural_network = NeuralNetwork::load(&model_path).unwrap();
@@ -125,7 +129,11 @@ fn main() {
             let mut to_test = *size;
             while datasource.has_next() && to_test > 0 {
                 let (input, target) = datasource.next().unwrap();
-                display_vector(input.clone());
+
+                if *verbose {
+                    display_vector(input.clone());
+                }
+
                 let input: Vec<f64> = input.iter().map(|&x| x as f64 / 255.0).collect();
                 let mut want = vec![0f64; 10];
                 want[target as usize] = 1.0;
@@ -135,9 +143,11 @@ fn main() {
                     success += 1;
                 }
 
-                println!("prediction = {}, target = {}", prediction, target);
-                println!("there are {} left", to_test);
+                if *verbose {
+                    println!("prediction = {}, target = {}", prediction, target);
+                }
 
+                println!("there are {} left", to_test);
                 to_test -= 1;
             }
 
